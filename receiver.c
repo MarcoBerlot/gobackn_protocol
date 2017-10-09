@@ -7,7 +7,6 @@ int main(int argc, char *argv[])
 	int numRead;
 	char buf[DATALEN];
 	struct sockaddr_in server;
-	struct sockaddr_in client;
 	FILE *outputFile;
 	socklen_t socklen;
 	
@@ -18,7 +17,7 @@ int main(int argc, char *argv[])
 	}
 
 	/*----- Opening the output file -----*/
-	if ((outputFile = fopen(argv[2], "wb")) == NULL){
+	if ((outputFile = fopen(argv[2], "w")) == NULL){
 		perror("fopen");
 		exit(-1);
 	}
@@ -49,21 +48,23 @@ int main(int argc, char *argv[])
 
 	/*----- Waiting for the client to connect -----*/
 	socklen = sizeof(struct sockaddr_in);
-	newSockfd = gbn_accept(sockfd, (struct sockaddr *)&client, &socklen);
+	newSockfd = gbn_accept(sockfd, (struct sockaddr *)&server, &socklen);
 	if (newSockfd == -1){
 		perror("gbn_accept");
 		exit(-1);
 	}
-	
+	fprintf(stdout,"Start reading on %d\n",newSockfd);
+
 	/*----- Reading from the socket and dumping it to the file -----*/
 	while(1){
-		if ((numRead = gbn_recv(newSockfd, buf, DATALEN, 0)) == -1){
+		if ((numRead = gbn_recv(newSockfd, buf, DATALEN, 0,(struct sockaddr *)&server, &socklen)) == -1){
 			perror("gbn_recv");
 			exit(-1);
 		}
 		else if (numRead == 0)
 			break;
 		fwrite(buf, 1, numRead, outputFile);
+		break;
 	}
 
 	/*----- Closing the socket -----*/
