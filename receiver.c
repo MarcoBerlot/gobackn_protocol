@@ -40,15 +40,15 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 	
-	/*----- Listening to new connections -----*/
+	/*----- Listening to new connections -----
 	if (gbn_listen(sockfd, 1) == -1){
 		perror("gbn_listen");
 		exit(-1);
-	}
+	}*/
 
 	/*----- Waiting for the client to connect -----*/
 	socklen = sizeof(struct sockaddr_in);
-	newSockfd = gbn_accept(sockfd, (struct sockaddr *)&server, &socklen);
+	newSockfd = gbn_accept(sockfd, (struct sockaddr *)&server, socklen);
 	if (newSockfd == -1){
 		perror("gbn_accept");
 		exit(-1);
@@ -64,14 +64,13 @@ int main(int argc, char *argv[])
 		else if (numRead == 0)
 			break;
 		fwrite(buf, 1, numRead, outputFile);
-		break;
 	}
 
 	/*----- Closing the socket -----*/
-	if (gbn_close(sockfd) == -1){
+	/*if (gbn_close(sockfd,(struct sockaddr *)&server, &socklen) == -1){
 		perror("gbn_close");
 		exit(-1);
-	}
+	}*/
 
 	/*----- Closing the file -----*/
 	if (fclose(outputFile) == EOF){

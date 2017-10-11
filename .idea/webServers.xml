@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="990dbf24-7827-4956-883c-126f2e5bbc90" name="Ubuntu" url="http://127.0.0.1">
+        <fileTransfer host="127.0.0.1" port="3022" rootFolder="/root" accessType="SFTP">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" />
+          </advancedOptions>
+          <option name="port" value="3022" />
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>

@@ -53,7 +53,6 @@ int main(int argc, char *argv[]){
 		if(numRead==0){
 			break;
 		}
-		fprintf(stdout,"Sending %s",buf);
 		if (gbn_send(sockfd, buf, numRead, 0,(struct sockaddr *)&server, socklen) == -1){
 			perror("gbn_send");
 			exit(-1);
@@ -61,7 +60,7 @@ int main(int argc, char *argv[]){
 	}
 
 	/*----- Closing the socket -----*/
-	if (gbn_close(sockfd) == -1){
+	if (gbn_close(sockfd,(struct sockaddr *)&server, socklen) == -1){
 		perror("gbn_close");
 		exit(-1);
 	}

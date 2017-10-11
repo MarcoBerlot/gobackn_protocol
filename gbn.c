@@ -11,7 +11,7 @@ uint16_t checksum(uint16_t *buf, int nwords)
 	return ~sum;
 }
 
-ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockaddr *client, socklen_t *socklen){
+ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockaddr *client, socklen_t socklen){
 	
 	/* TODO: Your code here. */
 
@@ -20,56 +20,136 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	 *       up into multiple packets - you don't have to worry
 	 *       about getting more than N * DATALEN.
 	 */
-	char buf[1024];
+	int i=0;
+	int reader=0;
 	int n=0;
-	fprintf(stdout,"Trying send %ld\n",len);
+	char *buf=buffer;
+	char ch;
+	int times=len/DATALEN;
+	int m;
+	int seqnum=0;
+	gbnhdr **packetarray=malloc(times*sizeof(gbnhdr));;
 
-	n=sendto(sockfd, buffer, len, 0, client, socklen);
+	/*Allocating packets and inserting them in my array*/
+	for(m=0;m<times;m++) {
+		gbnhdr *packet = malloc(sizeof(gbnhdr));
+		packet->type = DATA;
+		packet->checksum = 0;
+		packet->seqnum = seqnum++;
+		packet->data = malloc(sizeof(DATALEN));
+		for(reader=0;reader<DATALEN;reader++){
+			packet->data[reader]=buffer[reader];
+			buffer++;
+		}
+		packetarray[m]=packet;
+
+	}
+
+		for (i = 0; i < W; i++) {
+			n = sendto(sockfd, packetarray[i], sizeof(gbnhdr), 0, client, socklen);
+			fprintf(stdout, "Sent packet:%u with content: %s\n",packetarray[i]->seqnum,packetarray[i]->data);
+		}
 
 
-	fprintf(stdout,"Sent %d\n",n);
+	return(n);
+}
 
+ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockaddr * server, socklen_t socklen){
+
+	/* TODO: Your code here. */
+	/*Allocating FINACK packet*/
+	gbnhdr *finackpacket= malloc(sizeof(gbnhdr));
+	finackpacket->type=FINACK;
+	finackpacket->checksum=0;
+	finackpacket->seqnum=0;
+	finackpacket->data=malloc(sizeof(DATALEN));
+	int i=0;
+	int out=0;
+	int n=1;
+	char *buf;
+
+	gbnhdr *packet = malloc(sizeof(gbnhdr));
+	while(1) {
+		for (i = 0; i < W; i++) {
+			n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &socklen);
+			fprintf(stdout, "Received packet %u with content %c Type:%u \n", packet->seqnum, packet->data,packet->type);
+			if(packet->type==FIN) {
+				/*SENDING SYNACK*/
+				n=sendto(sockfd,finackpacket, sizeof(finackpacket), 0, server, socklen);
+				if(n>0) {
+					fprintf(stdout, "Sent SYNACK\n");
+					return (0);
+				}
+
+			}
+		}
+	}
+
+}
+
+int gbn_close(int sockfd,const struct sockaddr *server, socklen_t socklen){
+
+	/* TODO: Your code here. */
+	/*Allocating FIN % FINACK packet*/
+	gbnhdr *finpacket= malloc(sizeof(gbnhdr));
+	gbnhdr *finackpacket= malloc(sizeof(gbnhdr));
+	finpacket->type=FIN;
+	finpacket->checksum=0;
+	finpacket->seqnum=0;
+	finpacket->data=malloc(sizeof(DATALEN));
+	fprintf(stdout,"Sending FIN %u\n",finpacket->type);
+	int n=sendto(sockfd,finpacket, sizeof(finpacket), 0, server, socklen);
 	if(n==-1){
 		fprintf(stdout,"ERROR: sendTo()");
 	}
+	n=recvfrom(sockfd, finackpacket, sizeof(gbnhdr), 0,server, &socklen);
+	if(finackpacket->type==FINACK) {
+		fprintf(stdout,"RECEIVED FINACK\n CLOSE CONNECTION\n");
+		close(sockfd);
+	}
 	return(n);
-}
 
-ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockaddr * server, socklen_t *socklen){
-
-	/* TODO: Your code here. */
-	int n=0;
-	n=recvfrom(sockfd, buffer, len, 0,server, socklen);
-
-	return(n);
-}
-
-int gbn_close(int sockfd){
-
-	/* TODO: Your code here. */
-	close(sockfd);
-	return(-1);
 }
 
 int gbn_connect(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
 	/* TODO: Your code here. */
-	fprintf(stdout,"Trying connect()\n");
+	/*Setup connection sending a SYN*/
 	char buf[10];
-	sprintf(buf, "%d", SYN);
+	char buffer[10];
+	/*Allocating SYN packet*/
+	gbnhdr *synpacket= malloc(sizeof(gbnhdr));
+	synpacket->type=SYN;
+	synpacket->checksum=0;
+	synpacket->seqnum=0;
+	synpacket->data=malloc(sizeof(DATALEN));
 
-	int n=sendto(sockfd,buf, sizeof(buf), 0, server, socklen);
+
+
+	fprintf(stdout,"Sending SYN %u\n",synpacket->type);
+	int n=sendto(sockfd,synpacket, sizeof(synpacket), 0, server, socklen);
 	if(n==-1){
 		fprintf(stdout,"ERROR: sendTo()");
 	}
+
+	/*Waiting to receive the SYNACK*/
+	gbnhdr *asynpacket= malloc(sizeof(gbnhdr));
+	fprintf(stdout,"Waiting SYNACK \n");
+	n=recvfrom(sockfd, asynpacket, sizeof(gbnhdr), 0,server, &socklen);
+	if(asynpacket->type!=SYNACK)
+		return -1;
+	fprintf(stdout, "Received SYNACK %u\n", asynpacket->type);
+
 	return(n);
 }
 
 int gbn_listen(int sockfd, int backlog){
 
 	char buf[1024];
+	fprintf(stdout,"listening\n");
 	/* TODO: Your code here. */
 	int n=recvfrom( sockfd, buf, sizeof(buf), 0,0,0);
+	fprintf("Received SYN:%s\n",buf);
 	if(n==-1){
 		fprintf(stdout,"ERROR: listen()\n");
 	}
@@ -107,14 +187,25 @@ int gbn_socket(int domain, int type, int protocol){
 
 }
 
-int gbn_accept(int sockfd, struct sockaddr *client, socklen_t *socklen){
+int gbn_accept(int sockfd, struct sockaddr *client, socklen_t socklen){
 
 	/* TODO: Your code here. */
-	char buf[10];
-	int n=0;
-	sprintf(buf, "%d", SYNACK);
-	n=sendto(sockfd, buf, sizeof(buf), 0, client, *socklen);
+	gbnhdr *synpacket= malloc(sizeof(gbnhdr));
 
+
+	/*RECEIVE SYN*/
+	int n=recvfrom(sockfd, synpacket, sizeof(synpacket), 0,client, &socklen);
+	fprintf(stdout,"Received %u\n",synpacket->type);
+
+	/*Allocating SYNACK packet*/
+	gbnhdr *asynpacket= malloc(sizeof(gbnhdr));
+	asynpacket->type=SYNACK;
+	asynpacket->checksum=0;
+	asynpacket->seqnum=0;
+	asynpacket->data=malloc(sizeof(DATALEN));
+
+	/*SENDING SYNACK*/
+	n=sendto(sockfd,asynpacket, sizeof(asynpacket), 0, client, socklen);
 	return(sockfd);
 }
 
