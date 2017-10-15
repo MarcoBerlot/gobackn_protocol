@@ -10,7 +10,25 @@ uint16_t checksum(uint16_t *buf, int nwords)
 	sum += (sum >> 16);
 	return ~sum;
 }
+static void sig_alrm(int signo) {
+	fprintf(stdout,"Signal handler\n");
+	return;
+}
 
+int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen){
+	if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+		return (-1);
+	int i=0;
+	int n=0;
+	alarm(TIMEOUT);
+	fprintf(stdout,"Alarm set\n");
+	for(i=base;i<base+w;i++){
+	n=sendto(sockfd, packetarray[i], sizeof(gbnhdr),0,client,socklen);
+	fprintf(stdout,"Sending packet %u content %c\n", packetarray[i]->seqnum,packetarray[i]->data);
+	}
+	return i;
+
+}
 ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockaddr *client, socklen_t socklen){
 	
 	/* TODO: Your code here. */
@@ -20,15 +38,23 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	 *       up into multiple packets - you don't have to worry
 	 *       about getting more than N * DATALEN.
 	 */
-	int i=0;
 	int reader=0;
-	int n=0;
-	char *buf=buffer;
-	char ch;
-	int times=len/DATALEN;
-	int m;
-	int seqnum=0;
-	gbnhdr **packetarray=malloc(times*sizeof(gbnhdr));;
+	int n=1;
+	int  times=len/DATALEN;
+	int  m;
+	int  seqnum=0;
+	int  w=W;
+	int  base=0;
+	int  tnumberofpackets;
+	gbnhdr **packetarray=malloc(times*sizeof(gbnhdr));
+	gbnhdr *ack=malloc(sizeof(gbnhdr));
+	gbnhdr *fin=malloc(sizeof(gbnhdr));
+	fin->type=FIN;
+
+	ack->seqnum=-42;
+	ack->type=0;
+	ack->data=NULL;
+	ack->checksum=0;
 
 	/*Allocating packets and inserting them in my array*/
 	for(m=0;m<times;m++) {
@@ -44,12 +70,33 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 		packetarray[m]=packet;
 
 	}
+	tnumberofpackets=m;
+	seqnum=0;
+	w=2;
+	if (signal(SIGALRM, sig_alrm) == SIG_ERR)
+		return (-1);
 
-		for (i = 0; i < W; i++) {
-			n = sendto(sockfd, packetarray[i], sizeof(gbnhdr), 0, client, socklen);
-			fprintf(stdout, "Sent packet:%u with content: %s\n",packetarray[i]->seqnum,packetarray[i]->data);
+	seqnum=sendWindow(sockfd, base,w, packetarray, client,socklen);
+	while(base!=tnumberofpackets){
+		fprintf(stdout,"Waiting for ack %d\n",base);
+		n=recvfrom(sockfd,ack,sizeof(gbnhdr),0,client, &socklen);
+		fprintf(stdout,"Received ack %d\n",ack->seqnum);
+
+		if(n!=-1 && ack->seqnum>base && ack->seqnum<base+w ){
+			/*Woken up by ack*/
+			base=ack->seqnum+1;
+			if(seqnum<tnumberofpackets)
+				seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen);
+
+		}else{
+			/*Woken up by the signal, need to send again*/
+			fprintf(stdout,"TIMEOUT\n");
+			seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen);
 		}
 
+	}
+	sendto(sockfd, fin, sizeof(gbnhdr),0,client,socklen);
+	free(packetarray);
 
 	return(n);
 }
@@ -59,31 +106,49 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	/* TODO: Your code here. */
 	/*Allocating FINACK packet*/
 	gbnhdr *finackpacket= malloc(sizeof(gbnhdr));
+	gbnhdr *packet= malloc(sizeof(gbnhdr));
+	gbnhdr *ack= malloc(sizeof(gbnhdr));
+
+	ack->seqnum=0;
+	ack->type=DATAACK;
+
 	finackpacket->type=FINACK;
 	finackpacket->checksum=0;
 	finackpacket->seqnum=0;
 	finackpacket->data=malloc(sizeof(DATALEN));
-	int i=0;
-	int out=0;
-	int n=1;
-	char *buf;
 
-	gbnhdr *packet = malloc(sizeof(gbnhdr));
+	char buf[DATALEN];
+	int expected=0;
+	int n=0;
+
 	while(1) {
-		for (i = 0; i < W; i++) {
-			n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &socklen);
-			fprintf(stdout, "Received packet %u with content %c Type:%u \n", packet->seqnum, packet->data,packet->type);
-			if(packet->type==FIN) {
-				/*SENDING SYNACK*/
-				n=sendto(sockfd,finackpacket, sizeof(finackpacket), 0, server, socklen);
-				if(n>0) {
-					fprintf(stdout, "Sent SYNACK\n");
-					return (0);
-				}
+
+		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &socklen);
+		if((packet->seqnum)==expected) {
+			    fprintf(stdout,"Reading %u \n",packet->data);
+			    /*sprintf(buf, "%u", packet->data);*/
+				fprintf(stdout,"Sending ack %d \n",ack->seqnum);
+				sendto(sockfd, ack, sizeof(ack), 0, server, socklen);
+				ack->seqnum=expected;
+				expected++;
+
+			}else{
+			ack->seqnum=expected-1;
+				fprintf(stdout,"Sending ack %d \n",ack->seqnum);
+				sendto(sockfd, ack, sizeof(ack), 0, server, socklen);
 
 			}
+			if((packet->type)==FIN){
+				break;
+			}
 		}
-	}
+	fprintf(stdout,"Freeing Memory\n");
+	free(ack);
+	free(packet);
+	free(finackpacket);
+
+
+	return 0;
 
 }
 
@@ -115,8 +180,6 @@ int gbn_connect(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
 	/* TODO: Your code here. */
 	/*Setup connection sending a SYN*/
-	char buf[10];
-	char buffer[10];
 	/*Allocating SYN packet*/
 	gbnhdr *synpacket= malloc(sizeof(gbnhdr));
 	synpacket->type=SYN;
@@ -145,15 +208,8 @@ int gbn_connect(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
 int gbn_listen(int sockfd, int backlog){
 
-	char buf[1024];
-	fprintf(stdout,"listening\n");
-	/* TODO: Your code here. */
-	int n=recvfrom( sockfd, buf, sizeof(buf), 0,0,0);
-	fprintf("Received SYN:%s\n",buf);
-	if(n==-1){
-		fprintf(stdout,"ERROR: listen()\n");
-	}
-	return(n);
+
+	return(42);
 }
 
 int gbn_bind(int sockfd, const struct sockaddr *server, socklen_t socklen){
@@ -173,8 +229,9 @@ int gbn_socket(int domain, int type, int protocol){
 		
 	/*----- Randomizing the seed. This is used by the rand() function -----*/
 	srand((unsigned)time(0));
-	fprintf(stdout,"Trying socket()\n");
+
 	/* TODO: Your code here. */
+	fprintf(stdout,"Trying socket()\n");
 	int l=socket(domain,type, protocol);
 	if(l==-1){
 		fprintf(stdout,"ERROR: socket()\n");
