@@ -22,17 +22,18 @@ int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr 
 	int n=0;
 	alarm(TIMEOUT);
 	fprintf(stdout,"Alarm set\n");
-	for(i=base;i<base+w;i++){
-		if(packetarray[i]==NULL)
+	for(i=base;i<base+w;i++) {
+		if (packetarray[i] == NULL)
 			break;
-	n=sendto(sockfd, packetarray[i], sizeof(gbnhdr),0,client,socklen);
-	fprintf(stdout,"Sending packet %u content %u\n", packetarray[i]->seqnum,packetarray[i]->data);
+
+		n = sendto(sockfd, packetarray[i], sizeof(gbnhdr), 0, client, socklen);
+		fprintf(stdout, "Sending packet %u content %u n= %d\n", packetarray[i]->seqnum, packetarray[i]->data, n);
 	}
-	return i;
+	return 42;
 
 }
 ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockaddr *client, socklen_t socklen){
-	
+
 	/* TODO: Your code here. */
 
 	/* Hint: Check the data length field 'len'.
@@ -48,6 +49,10 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	int  w=W;
 	int  base=0;
 	int  tnumberofpackets;
+	int tmp=16;
+
+
+
 	gbnhdr **packetarray=malloc(times*sizeof(gbnhdr));
 	gbnhdr *ack=malloc(sizeof(gbnhdr));
 	gbnhdr *fin=malloc(sizeof(gbnhdr));
@@ -58,20 +63,29 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	ack->data=NULL;
 	ack->checksum=0;
 
+
+
+
 	/*Allocating packets and inserting them in my array*/
 	for(m=0;m<times;m++) {
+
+		fprintf(stdout, "am I here? chp1\n");
+
 		gbnhdr *packet = malloc(sizeof(gbnhdr));
 		packet->type = DATA;
 		packet->checksum = 0;
 		packet->seqnum = seqnum++;
 		packet->data = malloc(sizeof(DATALEN));
-		for(reader=0;reader<DATALEN;reader++){
-			packet->data[reader]=buffer[reader];
-			buffer++;
-		}
+
+
+		packet->data=buffer[m];
 		packetarray[m]=packet;
 
 	}
+
+	fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[0]->seqnum,packetarray[0]->data);
+	fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[1]->seqnum,packetarray[1]->data);
+
 	tnumberofpackets=m;
 	seqnum=0;
 	w=2;
@@ -82,12 +96,12 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	while(base<tnumberofpackets-1){
 		fprintf(stdout,"waiting for ack %d\n",base);
 		n=recvfrom(sockfd,ack,sizeof(ack),0,client, &socklen);
-		fprintf(stdout,"Received ack %d n=%d\n",ack->seqnum, n);
+		fprintf(stdout,"Received ack %d n:%d sockfd %d, client %u socklen %u n= %d \n",ack->seqnum,n,sockfd,client,socklen,n);
 
 		if(n!=-1 && ack->seqnum>=base && ack->seqnum<base+w ){
 			/*Woken up by ack*/
 			base=ack->seqnum+1;
-			w=2;
+			w=4;
 			if(seqnum<tnumberofpackets)
 				seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen,m);
 
@@ -99,12 +113,14 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 		}
 
 	}
+
 	sendto(sockfd, fin, sizeof(gbnhdr),0,client,socklen);
+
 	free(packetarray);
 	free(ack);
 	free(fin);
 
-	return(n);
+	return(0);
 }
 
 ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockaddr * server, socklen_t socklen){
@@ -132,24 +148,29 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	packet->checksum=0;
 	packet->seqnum=0;
 	packet->data=malloc(sizeof(DATALEN));
-
+	packet->data='1';
 	char buf[DATALEN];
 	int expected=0;
 	int n=0;
+	int tmp=16;
 
 	while(1) {
-		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, 16);
+		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &tmp);
+		fprintf(stdout, "this is n: %d\n",n);
+		fprintf(stdout, "Received packet %u with content %u Type:%u \n", packet->seqnum, packet->data,packet->type);
+
 		if((packet->seqnum)==expected) {
-			    fprintf(stdout,"Reading %u\n",packet->data);
-			    /*sprintf(buf, "%u", packet->data);*/
-			fprintf(stdout,"Sending ack %d n:%d sockfd %d, server %u socklen %u \n",ack->seqnum,n,sockfd,server,socklen);
+			fprintf(stdout,"Reading %u\n",packet->data);
+			ack->seqnum=expected;
 			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
-				ack->seqnum=expected;
-				expected++;
+			fprintf(stdout,"[IF] Sending ack %d n:%d sockfd %d, server %u socklen %u n= %d \n",ack->seqnum,n,sockfd,server,socklen,n);
+
+			expected++;
 
 			}else{
 			ack->seqnum=expected-1;
 			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
+			fprintf(stdout,"[ELSE]Sending ack %d n:%d sockfd %d, server %u socklen %u n= %d \n",ack->seqnum,n,sockfd,server,socklen,n);
 
 			fprintf(stdout,"Sending ack %d n:%d\n",ack->seqnum,n);
 
