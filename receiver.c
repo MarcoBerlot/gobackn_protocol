@@ -57,12 +57,14 @@ int main(int argc, char *argv[])
 
 	/*----- Reading from the socket and dumping it to the file -----*/
 	while(1){
-		if ((numRead = gbn_recv(newSockfd, buf, DATALEN, 0,(struct sockaddr *)&server, &socklen)) == -1){
+		fprintf(stdout,"SERVER : %d, SOCKLEN %d\n\n",&server,&socklen);
+		if ((numRead = gbn_recv(newSockfd, &buf, DATALEN, 0,(struct sockaddr *)&server, &socklen)) == -1){
 			perror("gbn_recv");
 			exit(-1);
 		}
 		else if (numRead == 0)
 			break;
+		fprintf(stdout,"Writing %d\n",numRead);
 		fwrite(buf, 1, numRead, outputFile);
 	}
 

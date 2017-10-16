@@ -69,7 +69,7 @@ int gbn_bind(int sockfd, const struct sockaddr *server, socklen_t socklen);
 int gbn_socket(int domain, int type, int protocol);
 int gbn_accept(int sockfd, struct sockaddr *addr, socklen_t addrlen);
 int gbn_close(int sockfd,const struct sockaddr *server, socklen_t socklen);
-int sendWindow(int sockfd, int nextseqn, int n , gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen);
+int sendWindow(int sockfd, int nextseqn, int n , gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen, int total);
 static void sig_alrm(int signo);
 
 ssize_t gbn_send(int sockfd, char *buf, size_t len, int flags,struct sockaddr *client, socklen_t socklen);

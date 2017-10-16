@@ -15,7 +15,7 @@ static void sig_alrm(int signo) {
 	return;
 }
 
-int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen){
+int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen, int total){
 	if (signal(SIGALRM, sig_alrm) == SIG_ERR)
 		return (-1);
 	int i=0;
@@ -23,8 +23,10 @@ int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr 
 	alarm(TIMEOUT);
 	fprintf(stdout,"Alarm set\n");
 	for(i=base;i<base+w;i++){
+		if(packetarray[i]==NULL)
+			break;
 	n=sendto(sockfd, packetarray[i], sizeof(gbnhdr),0,client,socklen);
-	fprintf(stdout,"Sending packet %u content %c\n", packetarray[i]->seqnum,packetarray[i]->data);
+	fprintf(stdout,"Sending packet %u content %u\n", packetarray[i]->seqnum,packetarray[i]->data);
 	}
 	return i;
 
@@ -76,27 +78,31 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	if (signal(SIGALRM, sig_alrm) == SIG_ERR)
 		return (-1);
 
-	seqnum=sendWindow(sockfd, base,w, packetarray, client,socklen);
-	while(base!=tnumberofpackets){
-		fprintf(stdout,"Waiting for ack %d\n",base);
-		n=recvfrom(sockfd,ack,sizeof(gbnhdr),0,client, &socklen);
-		fprintf(stdout,"Received ack %d\n",ack->seqnum);
+	seqnum=sendWindow(sockfd, base,w, packetarray, client,socklen, m);
+	while(base<tnumberofpackets-1){
+		fprintf(stdout,"waiting for ack %d\n",base);
+		n=recvfrom(sockfd,ack,sizeof(ack),0,client, &socklen);
+		fprintf(stdout,"Received ack %d n=%d\n",ack->seqnum, n);
 
-		if(n!=-1 && ack->seqnum>base && ack->seqnum<base+w ){
+		if(n!=-1 && ack->seqnum>=base && ack->seqnum<base+w ){
 			/*Woken up by ack*/
 			base=ack->seqnum+1;
+			w=2;
 			if(seqnum<tnumberofpackets)
-				seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen);
+				seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen,m);
 
 		}else{
 			/*Woken up by the signal, need to send again*/
+			w=1;
 			fprintf(stdout,"TIMEOUT\n");
-			seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen);
+			seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen,m);
 		}
 
 	}
 	sendto(sockfd, fin, sizeof(gbnhdr),0,client,socklen);
 	free(packetarray);
+	free(ack);
+	free(fin);
 
 	return(n);
 }
@@ -108,34 +114,44 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	gbnhdr *finackpacket= malloc(sizeof(gbnhdr));
 	gbnhdr *packet= malloc(sizeof(gbnhdr));
 	gbnhdr *ack= malloc(sizeof(gbnhdr));
-
+	if(ack==NULL){
+		fprintf(stdout,"ERROR in Malloc\n");
+		return(-1);
+	}
 	ack->seqnum=0;
 	ack->type=DATAACK;
+	ack->checksum=0;
+	ack->data=NULL;
 
 	finackpacket->type=FINACK;
 	finackpacket->checksum=0;
 	finackpacket->seqnum=0;
 	finackpacket->data=malloc(sizeof(DATALEN));
 
+	packet->type=DATA;
+	packet->checksum=0;
+	packet->seqnum=0;
+	packet->data=malloc(sizeof(DATALEN));
+
 	char buf[DATALEN];
 	int expected=0;
 	int n=0;
 
 	while(1) {
-
 		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &socklen);
 		if((packet->seqnum)==expected) {
-			    fprintf(stdout,"Reading %u \n",packet->data);
-			    /*sprintf(buf, "%u", packet->data);*/
-				fprintf(stdout,"Sending ack %d \n",ack->seqnum);
-				sendto(sockfd, ack, sizeof(ack), 0, server, socklen);
+			    fprintf(stdout,"Reading %u\n",packet->data);
+			sprintf(buf, "%u", packet->data);
+			fprintf(stdout,"Sending ack %d n:%d sockfd %d, server %u socklen %u \n",ack->seqnum,n,sockfd,server,socklen);
+			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
 				ack->seqnum=expected;
 				expected++;
 
 			}else{
 			ack->seqnum=expected-1;
-				fprintf(stdout,"Sending ack %d \n",ack->seqnum);
-				sendto(sockfd, ack, sizeof(ack), 0, server, socklen);
+			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
+
+			fprintf(stdout,"Sending ack %d n:%d\n",ack->seqnum,n);
 
 			}
 			if((packet->type)==FIN){
@@ -148,7 +164,7 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	free(finackpacket);
 
 
-	return 0;
+	return n;
 
 }
 
