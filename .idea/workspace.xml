@@ -10,9 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bd329e7a-c058-496d-b3c3-a551f5a85443" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gbn.c" afterPath="$PROJECT_DIR$/gbn.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/receiver.c" afterPath="$PROJECT_DIR$/receiver.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -37,8 +35,8 @@
       <file leaf-file-name="gbn.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gbn.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="421">
-              <caret line="143" column="18" lean-forward="false" selection-start-line="143" selection-start-column="18" selection-end-line="143" selection-end-column="18" />
+            <state relative-caret-position="225">
+              <caret line="140" column="66" lean-forward="false" selection-start-line="140" selection-start-column="66" selection-end-line="140" selection-end-column="66" />
               <folding />
             </state>
           </provider>
@@ -156,12 +154,12 @@
       <workItem from="1507841304972" duration="49000" />
       <workItem from="1508008048239" duration="1881000" />
       <workItem from="1508079969193" duration="145000" />
-      <workItem from="1508091253575" duration="9603000" />
+      <workItem from="1508091253575" duration="9839000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="41477000" />
+    <option name="totallyTimeSpent" value="41713000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
@@ -474,8 +472,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/gbn.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="421">
-          <caret line="143" column="18" lean-forward="false" selection-start-line="143" selection-start-column="18" selection-end-line="143" selection-end-column="18" />
+        <state relative-caret-position="225">
+          <caret line="140" column="66" lean-forward="false" selection-start-line="140" selection-start-column="66" selection-end-line="140" selection-end-column="66" />
           <folding />
         </state>
       </provider>

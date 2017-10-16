@@ -138,7 +138,7 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	int n=0;
 
 	while(1) {
-		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &socklen);
+		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, 16);
 		if((packet->seqnum)==expected) {
 			    fprintf(stdout,"Reading %u\n",packet->data);
 			    /*sprintf(buf, "%u", packet->data);*/
