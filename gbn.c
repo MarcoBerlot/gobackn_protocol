@@ -125,7 +125,7 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	return(0);
 }
 
-ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockaddr * server, socklen_t socklen){
+ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockaddr * server, socklen_t socklen, FILE *outputFile){
 
 	/* TODO: Your code here. */
 	/*Allocating FINACK packet*/
@@ -151,7 +151,7 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	packet->seqnum=0;
 	packet->data=malloc(sizeof(DATALEN));
 	packet->data='1';
-	char buf[DATALEN];
+	char buf[11024];
 	int expected=0;
 	int n=0;
 	int tmp=16;
@@ -166,7 +166,9 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 			ack->seqnum=expected;
 			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
 			fprintf(stdout,"[IF] Sending ack %d n:%d sockfd %d, server %u socklen %u n= %d \n",ack->seqnum,n,sockfd,server,socklen,n);
-
+			fprintf(stdout,"Writing size:%d\n",sizeof(packet->data));
+			sprintf(buf,"%u",packet->data);
+			fwrite(buf, 1, n, outputFile);
 			expected++;
 
 			}else{
@@ -181,13 +183,15 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 				break;
 			}
 		}
+
+
 	fprintf(stdout,"Freeing Memory\n");
 	free(ack);
 	free(packet);
 	free(finackpacket);
 
 
-	return 0;
+	return n;
 
 }
 
