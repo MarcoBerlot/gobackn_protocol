@@ -29,7 +29,7 @@ int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr 
 		n = sendto(sockfd, packetarray[i], sizeof(gbnhdr), 0, client, socklen);
 		fprintf(stdout, "Sending packet %u content %u n= %d\n", packetarray[i]->seqnum, packetarray[i]->data, n);
 	}
-	return 42;
+	return n;
 
 }
 ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockaddr *client, socklen_t socklen){
@@ -101,9 +101,11 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 		if(n!=-1 && ack->seqnum>=base && ack->seqnum<base+w ){
 			/*Woken up by ack*/
 			base=ack->seqnum+1;
-			w=4;
-			if(seqnum<tnumberofpackets)
-				seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen,m);
+			w=2;
+			fprintf(stdout,"HERE %d %d\n",seqnum, tnumberofpackets);
+
+				seqnum = sendWindow(sockfd, base, w, packetarray, client, socklen, m);
+
 
 		}else{
 			/*Woken up by the signal, need to send again*/

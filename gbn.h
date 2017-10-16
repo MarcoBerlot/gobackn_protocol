@@ -26,7 +26,7 @@ extern int errno;
 #define CORR_PROB 1e-3    /* corruption probability                      */
 #define DATALEN   1	      /* length of the payload                       */
 #define N         1024    /* Max number of packets a single call to gbn_send can process */
-#define TIMEOUT      4    /* timeout to resend packets (1 second)        */
+#define TIMEOUT      10    /* timeout to resend packets (1 second)        */
 
 /*----- Packet types -----*/
 #define SYN      0        /* Opens a connection                          */
