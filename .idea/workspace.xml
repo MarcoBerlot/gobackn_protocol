@@ -10,9 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bd329e7a-c058-496d-b3c3-a551f5a85443" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gbn.c" afterPath="$PROJECT_DIR$/gbn.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gbn.h" afterPath="$PROJECT_DIR$/gbn.h" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/receiver.c" afterPath="$PROJECT_DIR$/receiver.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
@@ -35,21 +33,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gbn.c" pinned="false" current-in-tab="true">
+      <file leaf-file-name="gbn.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/gbn.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="315">
-              <caret line="159" column="9" lean-forward="true" selection-start-line="159" selection-start-column="9" selection-end-line="159" selection-end-column="9" />
+            <state relative-caret-position="418">
+              <caret line="163" column="14" lean-forward="false" selection-start-line="163" selection-start-column="0" selection-end-line="164" selection-end-column="0" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="receiver.c" pinned="false" current-in-tab="false">
+      <file leaf-file-name="receiver.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/receiver.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="287">
-              <caret line="66" column="36" lean-forward="false" selection-start-line="66" selection-start-column="36" selection-end-line="66" selection-end-column="36" />
+            <state relative-caret-position="619">
+              <caret line="73" column="9" lean-forward="false" selection-start-line="73" selection-start-column="9" selection-end-line="73" selection-end-column="9" />
               <folding />
             </state>
           </provider>
@@ -81,8 +79,8 @@
       <list>
         <option value="$PROJECT_DIR$/sender.c" />
         <option value="$PROJECT_DIR$/gbn.h" />
-        <option value="$PROJECT_DIR$/receiver.c" />
         <option value="$PROJECT_DIR$/gbn.c" />
+        <option value="$PROJECT_DIR$/receiver.c" />
       </list>
     </option>
   </component>
@@ -157,12 +155,12 @@
       <workItem from="1507841304972" duration="49000" />
       <workItem from="1508008048239" duration="1881000" />
       <workItem from="1508079969193" duration="145000" />
-      <workItem from="1508091253575" duration="8861000" />
+      <workItem from="1508091253575" duration="9041000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="40735000" />
+    <option name="totallyTimeSpent" value="40915000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="0" width="1280" height="800" extended-state="0" />
@@ -465,18 +463,18 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/receiver.c">
+    <entry file="file://$PROJECT_DIR$/gbn.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="287">
-          <caret line="66" column="36" lean-forward="false" selection-start-line="66" selection-start-column="36" selection-end-line="66" selection-end-column="36" />
+        <state relative-caret-position="418">
+          <caret line="163" column="14" lean-forward="false" selection-start-line="163" selection-start-column="0" selection-end-line="164" selection-end-column="0" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/gbn.c">
+    <entry file="file://$PROJECT_DIR$/receiver.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="315">
-          <caret line="159" column="9" lean-forward="true" selection-start-line="159" selection-start-column="9" selection-end-line="159" selection-end-column="9" />
+        <state relative-caret-position="619">
+          <caret line="73" column="9" lean-forward="false" selection-start-line="73" selection-start-column="9" selection-end-line="73" selection-end-column="9" />
           <folding />
         </state>
       </provider>

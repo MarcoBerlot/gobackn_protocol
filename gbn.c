@@ -137,7 +137,7 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	int expected=0;
 	int n=0;
 
-	while(1) {
+
 		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &socklen);
 		if((packet->seqnum)==expected) {
 			    fprintf(stdout,"Reading %u\n",packet->data);
@@ -155,13 +155,13 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 
 			}
 			if((packet->type)==FIN){
-				break;
+				return 0;
 			}
-		}
-	fprintf(stdout,"Freeing Memory\n");
+
 	free(ack);
 	free(packet);
 	free(finackpacket);
+	fprintf(stdout,"Freed Memory\n");
 
 
 	return n;
