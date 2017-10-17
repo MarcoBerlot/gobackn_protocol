@@ -50,6 +50,7 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	int  base=0;
 	int  tnumberofpackets;
 	int tmp=16;
+	char content[2];
 
 
 
@@ -82,7 +83,10 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 		packet->checksum = 0;
 		packet->seqnum = seqnum++;
 		packet->data = malloc(sizeof(DATALEN));
-
+		for(tmp=0;tmp<2;tmp++){
+			content[tmp]=buffer[tmp];
+		}
+		fprintf(stdout,"CONTENT %s\n",content);
 
 		packet->data=buffer[m];
 		packetarray[m]=packet;
@@ -181,7 +185,7 @@ ssize_t gbn_recv(int sockfd, void **buffer, size_t len, int flags, struct sockad
 			if((packet->type)==FIN){
 				return 0;
 			}
-	fprintf(stdout,"Writing on buffer %u\n",buffer);
+	fprintf(stdout,"Writing on buffer %u\n",*buffer);
 	fprintf(stdout,"Freeing Memory\n");
 	free(ack);
 	free(packet);
