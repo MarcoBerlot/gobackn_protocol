@@ -73,7 +73,7 @@ int sendWindow(int sockfd, int nextseqn, int n , gbnhdr **packetarray, struct so
 static void sig_alrm(int signo);
 
 ssize_t gbn_send(int sockfd, char *buf, size_t len, int flags,struct sockaddr *client, socklen_t socklen);
-ssize_t gbn_recv(int sockfd, void *buf, size_t len, int flags,struct sockaddr * server, socklen_t socklen,FILE *outputFile);
+ssize_t gbn_recv(int sockfd, void **buf, size_t len, int flags,struct sockaddr * server, socklen_t socklen,FILE *outputFile, int* expected);
 
 ssize_t  maybe_sendto(int  s, const void *buf, size_t len, int flags, \
                       const struct sockaddr *to, socklen_t tolen);
