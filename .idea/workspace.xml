@@ -10,9 +10,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="bd329e7a-c058-496d-b3c3-a551f5a85443" name="Default" comment="">
+<<<<<<< HEAD
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/deployment.xml" afterPath="$PROJECT_DIR$/.idea/deployment.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/myfile" afterPath="$PROJECT_DIR$/myfile" />
+=======
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/gbn.c" afterPath="$PROJECT_DIR$/gbn.c" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -27,8 +32,13 @@
       <file leaf-file-name="sender.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/sender.c">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="408">
               <caret line="53" column="18" lean-forward="false" selection-start-line="53" selection-start-column="18" selection-end-line="53" selection-end-column="18" />
+=======
+            <state relative-caret-position="765">
+              <caret line="51" column="34" lean-forward="false" selection-start-line="51" selection-start-column="34" selection-end-line="51" selection-end-column="34" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
               <folding />
             </state>
           </provider>
@@ -37,18 +47,12 @@
       <file leaf-file-name="gbn.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/gbn.c">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="-4569">
               <caret line="19" column="29" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="372" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="gbn.h" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/gbn.h">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="138">
-              <caret line="43" column="21" lean-forward="false" selection-start-line="43" selection-start-column="13" selection-end-line="43" selection-end-column="21" />
+=======
+            <state relative-caret-position="135">
+              <caret line="90" column="29" lean-forward="false" selection-start-line="90" selection-start-column="29" selection-end-line="90" selection-end-column="29" />
               <folding />
             </state>
           </provider>
@@ -57,6 +61,33 @@
       <file leaf-file-name="myfile" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/myfile">
           <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="gbn.h" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/gbn.h">
+          <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
+            <state relative-caret-position="138">
+              <caret line="43" column="21" lean-forward="false" selection-start-line="43" selection-start-column="13" selection-end-line="43" selection-end-column="21" />
+=======
+            <state relative-caret-position="405">
+              <caret line="79" column="52" lean-forward="false" selection-start-line="79" selection-start-column="52" selection-end-line="79" selection-end-column="52" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="myfile" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/myfile">
+          <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
             <state relative-caret-position="0">
               <caret line="0" column="5" lean-forward="false" selection-start-line="0" selection-start-column="5" selection-end-line="0" selection-end-column="5" />
               <folding />
@@ -69,6 +100,10 @@
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="360">
               <caret line="66" column="45" lean-forward="false" selection-start-line="66" selection-start-column="45" selection-end-line="66" selection-end-column="45" />
+=======
+            <state relative-caret-position="18">
+              <caret line="26" column="22" lean-forward="false" selection-start-line="26" selection-start-column="22" selection-end-line="26" selection-end-column="22" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
               <folding />
             </state>
           </provider>
@@ -80,9 +115,13 @@
     <findStrings>
       <find>sending</find>
       <find>fimn</find>
+<<<<<<< HEAD
       <find>gbnhdr_checksum</find>
       <find>seqnum</find>
       <find>checksum</find>
+=======
+      <find>HERE</find>
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -176,7 +215,11 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
+<<<<<<< HEAD
     <option name="totallyTimeSpent" value="52561000" />
+=======
+    <option name="totallyTimeSpent" value="51536000" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="22" width="1680" height="963" extended-state="0" />
@@ -620,14 +663,15 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/receiver.c">
+    <entry file="file://$PROJECT_DIR$/gbn.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="66" column="45" lean-forward="false" selection-start-line="66" selection-start-column="45" selection-end-line="66" selection-end-column="45" />
+        <state relative-caret-position="18">
+          <caret line="26" column="22" lean-forward="false" selection-start-line="26" selection-start-column="22" selection-end-line="26" selection-end-column="22" />
           <folding />
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD
     <entry file="file://$PROJECT_DIR$/myfile">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -640,22 +684,38 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="138">
           <caret line="43" column="21" lean-forward="false" selection-start-line="43" selection-start-column="13" selection-end-line="43" selection-end-column="21" />
+=======
+    <entry file="file://$PROJECT_DIR$/sender.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="765">
+          <caret line="51" column="34" lean-forward="false" selection-start-line="51" selection-start-column="34" selection-end-line="51" selection-end-column="34" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/sender.c">
+    <entry file="file://$PROJECT_DIR$/receiver.c">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="408">
           <caret line="53" column="18" lean-forward="false" selection-start-line="53" selection-start-column="18" selection-end-line="53" selection-end-column="18" />
+=======
+        <state relative-caret-position="405">
+          <caret line="79" column="52" lean-forward="false" selection-start-line="79" selection-start-column="52" selection-end-line="79" selection-end-column="52" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/gbn.c">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD
         <state relative-caret-position="-4569">
           <caret line="19" column="29" lean-forward="true" selection-start-line="0" selection-start-column="0" selection-end-line="372" selection-end-column="0" />
+=======
+        <state relative-caret-position="135">
+          <caret line="90" column="29" lean-forward="false" selection-start-line="90" selection-start-column="29" selection-end-line="90" selection-end-column="29" />
+>>>>>>> fbf9c6435c0b1463a685924cdc7283377d93bb33
           <folding />
         </state>
       </provider>

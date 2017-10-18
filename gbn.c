@@ -28,7 +28,7 @@ static void sig_alrm(int signo) {
 	return;
 }
 
-int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen, int total){
+int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen, int times){
 	if (signal(SIGALRM, sig_alrm) == SIG_ERR)
 		return (-1);
 	int i=0;
@@ -36,7 +36,7 @@ int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr 
 	alarm(TIMEOUT);
 	fprintf(stdout,"Alarm set\n");
 	for(i=base;i<base+w;i++) {
-		if (packetarray[i] == NULL)
+		if (i>=times)
 			break;
 
 		n = sendto(sockfd, packetarray[i], sizeof(gbnhdr), 0, client, socklen);
@@ -63,10 +63,10 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	int  base=0;
 	int  tnumberofpackets;
 	int tmp=16;
+	char content[2];
 
 
 
-	gbnhdr **packetarray=malloc(times*sizeof(gbnhdr));
 	gbnhdr *ack=malloc(sizeof(gbnhdr));
 	gbnhdr *fin=malloc(sizeof(gbnhdr));
 	fin->type=FIN;
@@ -78,11 +78,18 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 
 
 
+	fprintf(stdout, "Divided into %d packets original length: %d  DATALEN %d chp0 \n",times, len,DATALEN);
+	if(len<DATALEN){
+		times=1;
+
+	}
+	gbnhdr **packetarray=malloc(times*sizeof(gbnhdr));
 
 	/*Allocating packets and inserting them in my array*/
 	for(m=0;m<times;m++) {
 
-		fprintf(stdout, "am I here? chp1\n");
+		fprintf(stdout, "am I here? chp1 %u\n",buffer);
+
 
 		gbnhdr *packet = malloc(sizeof(gbnhdr));
 		packet->type = DATA;
@@ -94,13 +101,15 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 		fprintf(stdout,"this is cs :%u\n",cs);
 
 		/*packet->checksum = malloc(sizeof(DATALEN));*/
-		uint32_t alpha = 1024;
-		fprintf(stdout,"this is alpha :%u\n",alpha);
 		packet->checksum = cs;
 
 		fprintf(stdout,"INSIDE checksum from the sender side function call: %u \n",cs);
 		fprintf(stdout,"INSIDE checksum from the sender side packet->checksum: %u, %u \n",(packet->checksum),cs);
 
+		for(tmp=0;tmp<2;tmp++){
+			content[tmp]=buffer[tmp];
+		}
+		fprintf(stdout,"CONTENT %s\n",content);
 
 		packetarray[m]=packet;
 
@@ -113,23 +122,25 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	*fprintf(stdout,"OUTSIDE checksum from the sender side function call: %u \n",gbnhdr_checksum(packetarray[0]));
 	*fprintf(stdout,"OUTSIDE checksum from the sender side packet->checksum: %u \n",packetarray[0]->checksum);
 	*/
-	tnumberofpackets=m;
+	tnumberofpackets=times;
+	fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[0]->seqnum,packetarray[0]->data);
+
+	tnumberofpackets=times;
 	seqnum=0;
 	w=2;
 	if (signal(SIGALRM, sig_alrm) == SIG_ERR)
 		return (-1);
 
-	seqnum=sendWindow(sockfd, base,w, packetarray, client,socklen, m);
-	while(base<tnumberofpackets-1){
+	seqnum=sendWindow(sockfd, base,w, packetarray, client,socklen, times);
+	while(base<tnumberofpackets){
 		fprintf(stdout,"waiting for ack %d\n",base);
 		n=recvfrom(sockfd,ack,sizeof(ack),0,client, &socklen);
-		fprintf(stdout,"Received ack %d n:%d sockfd %d, client %u socklen %u n= %d \n",ack->seqnum,n,sockfd,client,socklen,n);
+		fprintf(stdout,"Received ack %d n:%d sockfd %d, client %u socklen %u n= %d \n",ack->seqnum,n,sockfd,client,socklen,times);
 
 		if(n!=-1 && ack->seqnum>=base && ack->seqnum<base+w ){
 			/*Woken up by ack*/
 			base=ack->seqnum+1;
 			w=2;
-			fprintf(stdout,"HERE %d %d\n",seqnum, tnumberofpackets);
 
 				seqnum = sendWindow(sockfd, base, w, packetarray, client, socklen, m);
 
@@ -138,7 +149,7 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 			/*Woken up by the signal, need to send again*/
 			w=1;
 			fprintf(stdout,"TIMEOUT\n");
-			seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen,m);
+			seqnum=sendWindow(sockfd,base,w, packetarray, client,socklen,times);
 		}
 
 	}
@@ -152,7 +163,7 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	return(0);
 }
 
-ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockaddr * server, socklen_t socklen){
+ssize_t gbn_recv(int sockfd, void **buffer, size_t len, int flags, struct sockaddr * server, socklen_t socklen, FILE *outputFile, int *expected){
 
 	/* TODO: Your code here. */
 	/*Allocating FINACK packet*/
@@ -179,47 +190,45 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	packet->seqnum=0;
 	packet->data=malloc(sizeof(DATALEN));
 	packet->data='1';
-	char buf[DATALEN];
-	int expected=0;
+	char buf[11024];
 	int n=0;
 	int tmp=16;
 
-	while(1) {
+
 		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &tmp);
 		fprintf(stdout, "Received packet %u with content %u Type:%u Checksum %u \n", packet->seqnum, packet->data, packet->type,packet->checksum);
 		uint32_t cs =  gbnhdr_checksum(packet);
 
 		fprintf(stdout, "this is n!: %d\n",n);
-		fprintf(stdout,"checksum from the receiver side function: %u \n",cs);
 		fprintf(stdout,"expected checksum: %u \n",packet->checksum);
+		fprintf(stdout, "this is n: %d, Expected :%d\n",n,*expected);
+		fprintf(stdout, "Received packet %u with content %u Type:%u \n", packet->seqnum, packet->data,packet->type);
 
-		if((packet->seqnum)==expected) {
+		if((packet->seqnum)==*expected) {
 			fprintf(stdout,"Reading %u\n",packet->data);
-			ack->seqnum=expected;
+			ack->seqnum=*expected;
 			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
-			fprintf(stdout,"[IF] Sending ack %d n:%d sockfd %d, server %u socklen %u n= %d \n",ack->seqnum,n,sockfd,server,socklen,n);
-
-			expected++;
+			*buffer=packet->data;
+			*expected=*expected+1;
 
 			}else{
-			ack->seqnum=expected-1;
+			ack->seqnum=*expected-1;
 			n=sendto(sockfd, ack, sizeof(ack), 0, server, 16);
-			fprintf(stdout,"[ELSE]Sending ack %d n:%d sockfd %d, server %u socklen %u n= %d \n",ack->seqnum,n,sockfd,server,socklen,n);
 
 			fprintf(stdout,"Sending ack %d n:%d\n",ack->seqnum,n);
 
 			}
 			if((packet->type)==FIN){
-				break;
+				return 0;
 			}
-		}
+	fprintf(stdout,"Writing on buffer %u\n",*buffer);
 	fprintf(stdout,"Freeing Memory\n");
 	free(ack);
 	free(packet);
 	free(finackpacket);
 
 
-	return 0;
+	return n;
 
 }
 

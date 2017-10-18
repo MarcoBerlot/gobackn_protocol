@@ -9,6 +9,7 @@ int main(int argc, char *argv[])
 	struct sockaddr_in server;
 	FILE *outputFile;
 	socklen_t socklen;
+	int expected=0;
 	
 	/*----- Checking arguments -----*/
 	if (argc != 3){
@@ -56,15 +57,27 @@ int main(int argc, char *argv[])
 	fprintf(stdout,"Start reading on %d\n",newSockfd);
 
 	/*----- Reading from the socket and dumping it to the file -----*/
+
+		/*fprintf(stdout,"SERVER : %d, SOCKLEN %d\n\n",&server,&socklen);
+		if ((numRead = gbn_recv(newSockfd, &buf, DATALEN, 0,(struct sockaddr *)&server, &socklen, outputFile)) == -1){
+			perror("gbn_recv");
+			exit(-1);
+		}*/
+
+
+/*----- Reading from the socket and dumping it to the file -----*/
+	char *str=malloc(DATALEN+1);
+	str=buf;
 	while(1){
-		fprintf(stdout,"SERVER : %d, SOCKLEN %d\n\n",&server,&socklen);
-		if ((numRead = gbn_recv(newSockfd, &buf, DATALEN, 0,(struct sockaddr *)&server, &socklen)) == -1){
+		if ((numRead = gbn_recv(newSockfd, &str, DATALEN, 0,(struct sockaddr *)&server, &socklen, outputFile, &expected)) == -1){
 			perror("gbn_recv");
 			exit(-1);
 		}
 		else if (numRead == 0)
 			break;
-		fprintf(stdout,"Writing %d",numRead);
+		fprintf(stdout, "Writing on file %u\n", str);
+		sprintf(buf,"%u",str);
+		fprintf(stdout, "Writing on buf %s\n", buf);
 		fwrite(buf, 1, numRead, outputFile);
 	}
 
