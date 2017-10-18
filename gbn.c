@@ -10,6 +10,19 @@ uint16_t checksum(uint16_t *buf, int nwords)
 	sum += (sum >> 16);
 	return ~sum;
 }
+
+uint16_t gbnhdr_checksum(gbnhdr *packet) {
+	int totalLength =  sizeof(packet->seqnum) + sizeof(packet->type) + sizeof(packet->data);
+	fprintf(stdout,"totalLength%d\n",totalLength);
+	uint32_t temp = packet->checksum;
+	packet->checksum = 0 ;
+	uint32_t returnval = checksum(packet, (totalLength / sizeof(uint16_t)));
+	packet->checksum = temp ;
+	return returnval;
+
+}
+
+
 static void sig_alrm(int signo) {
 	fprintf(stdout,"Signal handler\n");
 	return;
@@ -27,7 +40,7 @@ int sendWindow(int sockfd,int base, int w,gbnhdr **packetarray, struct sockaddr 
 			break;
 
 		n = sendto(sockfd, packetarray[i], sizeof(gbnhdr), 0, client, socklen);
-		fprintf(stdout, "Sending packet %u content %u n= %d\n", packetarray[i]->seqnum, packetarray[i]->data, n);
+		fprintf(stdout, "Sending packet %u content %u type %u checksum %u n= %d\n", packetarray[i]->seqnum, packetarray[i]->data,packetarray[i]->type, packetarray[i]->checksum, n);
 	}
 	return n;
 
@@ -45,7 +58,7 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 	int n=1;
 	int  times=len/DATALEN;
 	int  m;
-	int  seqnum=0;
+	int  seqnum = 0;
 	int  w=W;
 	int  base=0;
 	int  tnumberofpackets;
@@ -73,19 +86,33 @@ ssize_t gbn_send(int sockfd, char *buffer, size_t len, int flags, struct sockadd
 
 		gbnhdr *packet = malloc(sizeof(gbnhdr));
 		packet->type = DATA;
-		packet->checksum = 0;
 		packet->seqnum = seqnum++;
 		packet->data = malloc(sizeof(DATALEN));
-
-
 		packet->data=buffer[m];
+
+		uint32_t cs =  gbnhdr_checksum(packet);
+		fprintf(stdout,"this is cs :%u\n",cs);
+
+		/*packet->checksum = malloc(sizeof(DATALEN));*/
+		uint32_t alpha = 1024;
+		fprintf(stdout,"this is alpha :%u\n",alpha);
+		packet->checksum = cs;
+
+		fprintf(stdout,"INSIDE checksum from the sender side function call: %u \n",cs);
+		fprintf(stdout,"INSIDE checksum from the sender side packet->checksum: %u, %u \n",(packet->checksum),cs);
+
+
 		packetarray[m]=packet;
 
+
+
 	}
-
-	fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[0]->seqnum,packetarray[0]->data);
-	fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[1]->seqnum,packetarray[1]->data);
-
+	/*
+	*fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[0]->seqnum,packetarray[0]->data);
+	*fprintf(stdout, "This is checking the content!!!!! packet:%u with content: %u\n",packetarray[1]->seqnum,packetarray[1]->data);
+	*fprintf(stdout,"OUTSIDE checksum from the sender side function call: %u \n",gbnhdr_checksum(packetarray[0]));
+	*fprintf(stdout,"OUTSIDE checksum from the sender side packet->checksum: %u \n",packetarray[0]->checksum);
+	*/
 	tnumberofpackets=m;
 	seqnum=0;
 	w=2;
@@ -146,8 +173,9 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 	finackpacket->seqnum=0;
 	finackpacket->data=malloc(sizeof(DATALEN));
 
+
 	packet->type=DATA;
-	packet->checksum=0;
+	packet->checksum =0;
 	packet->seqnum=0;
 	packet->data=malloc(sizeof(DATALEN));
 	packet->data='1';
@@ -158,8 +186,12 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags, struct sockadd
 
 	while(1) {
 		n = recvfrom(sockfd, packet, sizeof(packet), 0, server, &tmp);
-		fprintf(stdout, "this is n: %d\n",n);
-		fprintf(stdout, "Received packet %u with content %u Type:%u \n", packet->seqnum, packet->data,packet->type);
+		fprintf(stdout, "Received packet %u with content %u Type:%u Checksum %u \n", packet->seqnum, packet->data, packet->type,packet->checksum);
+		uint32_t cs =  gbnhdr_checksum(packet);
+
+		fprintf(stdout, "this is n!: %d\n",n);
+		fprintf(stdout,"checksum from the receiver side function: %u \n",cs);
+		fprintf(stdout,"expected checksum: %u \n",packet->checksum);
 
 		if((packet->seqnum)==expected) {
 			fprintf(stdout,"Reading %u\n",packet->data);
