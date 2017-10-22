@@ -24,9 +24,9 @@ extern int errno;
 /*----- Protocol parameters -----*/
 #define LOSS_PROB 1e-2    /* loss probability                            */
 #define CORR_PROB 1e-3    /* corruption probability                      */
-#define DATALEN   1024	      /* length of the payload                       */
+#define DATALEN   1024       /* length of the payload                       */
 #define N         1024    /* Max number of packets a single call to gbn_send can process */
-#define TIMEOUT      10    /* timeout to resend packets (1 second)        */
+#define TIMEOUT      1    /* timeout to resend packets (1 second)        */
 
 /*----- Packet types -----*/
 #define SYN      0        /* Opens a connection                          */
@@ -39,25 +39,25 @@ extern int errno;
 
 /*----- Go-Back-n packet format -----*/
 typedef struct {
-	uint8_t  type;            /* packet type (e.g. SYN, DATA, ACK, FIN)     */
-	int seqnum;          /* sequence number of the packet              */
+    uint8_t  type;            /* packet type (e.g. SYN, DATA, ACK, FIN)     */
+    int seqnum;          /* sequence number of the packet              */
     uint16_t checksum;        /* header and payload checksum                */
-    uint8_t *data;    /* pointer to the payload                     */
+    uint8_t data[DATALEN];    /* pointer to the payload                     */
 } __attribute__((packed)) gbnhdr;
 
 typedef struct state_t{
 
-	/* TODO: Your state information could be encoded here. */
+    /* TODO: Your state information could be encoded here. */
 
 } state_t;
 
 enum {
-	CLOSED=0,
-	SYN_SENT,
-	SYN_RCVD,
-	ESTABLISHED,
-	FIN_SENT,
-	FIN_RCVD
+    CLOSED=0,
+    SYN_SENT,
+    SYN_RCVD,
+    ESTABLISHED,
+    FIN_SENT,
+    FIN_RCVD
 };
 
 extern state_t s;
@@ -68,17 +68,21 @@ int gbn_listen(int sockfd, int backlog);
 int gbn_bind(int sockfd, const struct sockaddr *server, socklen_t socklen);
 int gbn_socket(int domain, int type, int protocol);
 int gbn_accept(int sockfd, struct sockaddr *addr, socklen_t addrlen);
-int gbn_close(int sockfd,const struct sockaddr *server, socklen_t socklen);
-int sendWindow(int sockfd, int nextseqn, int n , gbnhdr **packetarray, struct sockaddr *client, socklen_t socklen, int total);
+int gbn_close(int sockfd);
+int sendWindow(int sockfd, int nextseqn, int n , gbnhdr *packetarray, struct sockaddr *client, socklen_t socklen, int total,int reminder);
 static void sig_alrm(int signo);
+void changeStage(int *stage);
 
-ssize_t gbn_send(int sockfd, char *buf, size_t len, int flags,struct sockaddr *client, socklen_t socklen);
-ssize_t gbn_recv(int sockfd, void **buf, size_t len, int flags,struct sockaddr * server, socklen_t socklen,FILE *outputFile, int* expected);
+ssize_t gbn_send(int sockfd, const void  *buf, size_t len, int flags);
+ssize_t gbn_recv(int sockfd, void *buf, size_t len, int flags);
 
 ssize_t  maybe_sendto(int  s, const void *buf, size_t len, int flags, \
                       const struct sockaddr *to, socklen_t tolen);
 
 uint16_t checksum(uint16_t *buf, int nwords);
+/*
+uint16_t gbnhdr_checksum(gbnhdr packet);
+*/
 
 
 #endif

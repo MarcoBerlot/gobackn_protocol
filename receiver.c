@@ -10,7 +10,8 @@ int main(int argc, char *argv[])
 	FILE *outputFile;
 	socklen_t socklen;
 	int expected=0;
-	
+	char *str=malloc(DATALEN+1);
+	str=buf;
 	/*----- Checking arguments -----*/
 	if (argc != 3){
 		fprintf(stderr, "usage: receiver <port> <filename>\n");
@@ -41,11 +42,11 @@ int main(int argc, char *argv[])
 		exit(-1);
 	}
 	
-	/*----- Listening to new connections -----
+	/*----- Listening to new connections -----*/
 	if (gbn_listen(sockfd, 1) == -1){
 		perror("gbn_listen");
 		exit(-1);
-	}*/
+	}
 
 	/*----- Waiting for the client to connect -----*/
 	socklen = sizeof(struct sockaddr_in);
@@ -56,36 +57,28 @@ int main(int argc, char *argv[])
 	}
 	fprintf(stdout,"Start reading on %d\n",newSockfd);
 
-	/*----- Reading from the socket and dumping it to the file -----*/
 
-		/*fprintf(stdout,"SERVER : %d, SOCKLEN %d\n\n",&server,&socklen);
-		if ((numRead = gbn_recv(newSockfd, &buf, DATALEN, 0,(struct sockaddr *)&server, &socklen, outputFile)) == -1){
-			perror("gbn_recv");
-			exit(-1);
-		}*/
 
 
 /*----- Reading from the socket and dumping it to the file -----*/
-	char *str=malloc(DATALEN+1);
-	str=buf;
+
 	while(1){
-		if ((numRead = gbn_recv(newSockfd, &str, DATALEN, 0,(struct sockaddr *)&server, &socklen, outputFile, &expected)) == -1){
+		if ((numRead = gbn_recv(newSockfd, buf, DATALEN, 0)) == -1){
 			perror("gbn_recv");
 			exit(-1);
 		}
-		else if (numRead == 0)
+		else if (numRead == 0) {
+			fprintf(stdout,"\nENDING HERE\n\n\n");
 			break;
-		fprintf(stdout, "Writing on file %u\n", str);
-		sprintf(buf,"%u",str);
-		fprintf(stdout, "Writing on buf %s\n", buf);
+		}
 		fwrite(buf, 1, numRead, outputFile);
 	}
 
 	/*----- Closing the socket -----*/
-	/*if (gbn_close(sockfd,(struct sockaddr *)&server, &socklen) == -1){
+	if (gbn_close(sockfd) == -1){
 		perror("gbn_close");
 		exit(-1);
-	}*/
+	}
 
 	/*----- Closing the file -----*/
 	if (fclose(outputFile) == EOF){
