@@ -20,13 +20,11 @@ uint16_t checksum(uint16_t *buf, int nwords)
 
 uint16_t gbnhdr_checksum(gbnhdr packet,int length) {
 
-    int totalLength =  length;
-    fprintf(stdout,"totalLength%d\n",totalLength);
     uint32_t temp = packet.checksum;
-    fprintf(stdout,"checksum inside%u\n",packet.checksum);
+    fprintf(stdout,"checksum!inside%u\n",packet.checksum);
     packet.checksum = 0 ;
-    fprintf(stdout,"checksum inside2%u\n",packet.checksum);
-    uint32_t returnval = checksum(&packet, (totalLength / sizeof(uint16_t)));
+    fprintf(stdout,"checksum! inside2%u\n",packet.checksum);
+    uint32_t returnval = checksum(&packet, (length / sizeof(uint16_t)));
     packet.checksum = temp ;
     return returnval;
 
@@ -209,7 +207,7 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags){
         fprintf(stdout,"INSIDE checksum from the receiver side packet->seq : %u, packet->type : %u, packet->data : %u, checksum =%u function call %u \n",mypacket.seqnum,mypacket.type,mypacket.data,mypacket.checksum,cs);
 
         /*fprintf(stdout, "%s\n",buffer);*/
-        if ((mypacket.seqnum) == expected) {
+        if ((mypacket.seqnum) == expected && (mypacket.checksum == cs)) {
             fprintf(stdout, "Reading  %u\n", mypacket.data);
             ack->seqnum = expected;
             n = sendto(sockfd, ack, sizeof(ack), 0, &myclient, mycsocklen);
@@ -228,8 +226,8 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags){
             memcpy(&expected, &tmp, sizeof(int));
 
             memcpy(buffer, mypacket.data, sizeof(mypacket.data));
-            fprintf(stdout,"\n M-7  %d\n",m-7);
-            return m-7;
+            fprintf(stdout,"\n M-7  %d\n",m-4);
+            return m-4;
 
         } else {
             ack->seqnum = expected - 1;

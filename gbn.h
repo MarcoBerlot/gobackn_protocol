@@ -40,7 +40,7 @@ extern int errno;
 /*----- Go-Back-n packet format -----*/
 typedef struct {
     uint8_t  type;            /* packet type (e.g. SYN, DATA, ACK, FIN)     */
-    int seqnum;          /* sequence number of the packet              */
+    uint8_t seqnum;          /* sequence number of the packet              */
     uint16_t checksum;        /* header and payload checksum                */
     uint8_t data[DATALEN];    /* pointer to the payload                     */
 } __attribute__((packed)) gbnhdr;
@@ -80,9 +80,7 @@ ssize_t  maybe_sendto(int  s, const void *buf, size_t len, int flags, \
                       const struct sockaddr *to, socklen_t tolen);
 
 uint16_t checksum(uint16_t *buf, int nwords);
-/*
-uint16_t gbnhdr_checksum(gbnhdr packet);
-*/
+uint16_t gbnhdr_checksum(gbnhdr packet,int length);
 
 
 #endif
