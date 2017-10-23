@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
 	}
 
 	/*----- Opening the output file -----*/
-	if ((outputFile = fopen(argv[2], "w")) == NULL){
+	if ((outputFile = fopen(argv[2], "wb")) == NULL){
 		perror("fopen");
 		exit(-1);
 	}
@@ -68,7 +68,6 @@ int main(int argc, char *argv[])
 			exit(-1);
 		}
 		else if (numRead == 0) {
-			fprintf(stdout,"\nENDING HERE\n\n\n");
 			break;
 		}
 		fwrite(buf, 1, numRead, outputFile);

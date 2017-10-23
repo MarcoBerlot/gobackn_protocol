@@ -17,13 +17,16 @@ uint16_t checksum(uint16_t *buf, int nwords)
     sum += (sum >> 16);
     return ~sum;
 }
-
+/**********************************************************************************************************************/
+/* A helper function for checksum. It calls checksum function at the end.
+ * The gbnhdr_checksum temporarily stores the original checksum value (useful for reciever). Then it computes the checksum and puts back the value
+ * to the corresponding packet. We divided by the size of uint16_t for nwords because the checksum provided by the lab checks the CS
+ * by 0xffff which is 2 bytes*/
+/**********************************************************************************************************************/
 uint16_t gbnhdr_checksum(gbnhdr packet,int length) {
 
     uint32_t temp = packet.checksum;
-    fprintf(stdout,"checksum!inside%u\n",packet.checksum);
     packet.checksum = 0 ;
-    fprintf(stdout,"checksum! inside2%u\n",packet.checksum);
     uint32_t returnval = checksum(&packet, (length / sizeof(uint16_t)));
     packet.checksum = temp ;
     return returnval;
@@ -34,47 +37,45 @@ static void sig_alrm(int signo) {
     fprintf(stdout,"Signal Handler\n");
     return;
 }
-
+/**********************************************************************************************************************/
+/* Send the packets that are inside the window. The size of the window is taken as the parameter w as well as the base.
+ * We set an alarm that will call a signal after TIMEOUT seconds.*/
+/**********************************************************************************************************************/
 int sendWindow(int sockfd,int base, int w,gbnhdr *packetarray, struct sockaddr *client, socklen_t socklen, int times,int reminder){
     if (signal(SIGALRM, sig_alrm) == SIG_ERR)
         return (-1);
     int i=0;
     int n=0;
     alarm(TIMEOUT);
-    fprintf(stdout,"Alarm set\n");
     for(i=base;i<base+w;i++) {
         if (i>=times)
             break;
-        if(i==times-1 && times!=1024){
+        if(i==times-1 && times!=N && reminder!=0){
+            /*The length of the packet is calculated before calling the gbnhdr_checksum. We only want to calculate checksum of the valid data*/
             uint32_t cs =  gbnhdr_checksum(packetarray[i],sizeof(gbnhdr)-(DATALEN-reminder));
             packetarray[i].checksum = cs;
-            fprintf(stdout,"NOT END checksum from the sender side packet->seq : %u, packet->type : %u, packet->data : %u, checksum =%u function call %u \n",packetarray[i].seqnum,packetarray[i].type,packetarray[i].data,packetarray[i].checksum,cs);
-            n = sendto(sockfd, &packetarray[i], sizeof(gbnhdr)-(DATALEN-reminder), 0, client, socklen);
-            fprintf(stdout, "\n\nLAST PACKET Contenst \n\n");
+            n = maybe_sendto(sockfd, &packetarray[i], sizeof(gbnhdr)-(DATALEN-reminder), 0, client, socklen);
 
         }
         else {
             uint32_t cs =  gbnhdr_checksum(packetarray[i], sizeof(gbnhdr));
             packetarray[i].checksum = cs;
-            fprintf(stdout,"NOT END checksum from the sender side packet->seq : %u, packet->type : %u, packet->data : %u, checksum =%u function call %u \n",packetarray[i].seqnum,packetarray[i].type,packetarray[i].data,packetarray[i].checksum,cs);
-            n = sendto(sockfd, &packetarray[i], sizeof(gbnhdr), 0, client, socklen);
+            n = maybe_sendto(sockfd, &packetarray[i], sizeof(gbnhdr), 0, client, socklen);
+            printf("packet %u\n",packetarray[i].seqnum);
+
         }
 
     }
-    return n;
+    return packetarray[i].seqnum;
 
 }
-/*ssize_t gbn_send(int sockfd, const void *buf, size_t len, int flags)*/
-
+/**********************************************************************************************************************/
+/* The function first creates an array that will contain all the packets to send. Then it starts a loop that ends when
+ * all the packets in the array are sent. Everytime the function waits at the receiving point. When the function is
+ * unlocked depenging on the returning value we can instantiate a timeout or move the signal.*/
+/**********************************************************************************************************************/
 ssize_t gbn_send(int sockfd, const void *buffer, size_t len, int flags){
 
-    /* TODO: Your code here. */
-
-    /* Hint: Check the data length field 'len'.
-     *       If it is > DATALEN, you will have to split the data
-     *       up into multiple packets - you don't have to worry
-     *       about getting more than N * DATALEN.
-     */
     int reader=0;
     int n=1;
     int  times=len/DATALEN;
@@ -92,6 +93,7 @@ ssize_t gbn_send(int sockfd, const void *buffer, size_t len, int flags){
     gbnhdr *ack=malloc(sizeof(gbnhdr));
     gbnhdr *fin=malloc(sizeof(gbnhdr));
     fin->type=FIN;
+    int mult=0;
 
     ack->seqnum=-42;
     ack->type=0;
@@ -112,18 +114,12 @@ ssize_t gbn_send(int sockfd, const void *buffer, size_t len, int flags){
         packet.type = DATA;
         packet.checksum = 0;
         packet.seqnum = seqnum++;
-        /*for(i=0;i<DATALEN;i++) {
-            packet.data[i] = buffer[bufferReader++];
-            fprintf(stdout,"CONTENT %u",packet.data[i]);
-        }*/
         memcpy(packet.data,buffer+m*DATALEN,DATALEN);
-        /*buffer++;*/
         packetarray[m]=packet;
 
     }
-
+    /*Last packet smaller than DATALEN*/
     if (reminder>0){
-        fprintf(stdout, "Adding  one last packet of length %d \n",reminder);
         gbnhdr packet;
         packet.type = DATA;
         packet.checksum = 0;
@@ -137,39 +133,56 @@ ssize_t gbn_send(int sockfd, const void *buffer, size_t len, int flags){
     tnumberofpackets=times;
     seqnum=0;
     w=2;
+    int counter=0;
+    int newcounter=0;
+
     if (signal(SIGALRM, sig_alrm) == SIG_ERR)
         return (-1);
 
     seqnum=sendWindow(sockfd, base,w, packetarray, &myserver,mysocklen, times,reminder);
-    while(base<tnumberofpackets){
-        fprintf(stdout,"waiting for ack %d\n",base);
+    while(counter<tnumberofpackets){
+        printf("waiting for ack %d or %d\n",base, base+w);
         n=recvfrom(sockfd,ack,sizeof(ack),0,&myserver, &mysocklen);
-        fprintf(stdout,"Received ack %d n:%d\n",ack->seqnum,n,sockfd);
+        if(base==256)
+            base=0;
+        printf("Received  ack %d\n",ack->seqnum);
 
-        if(n!=-1 && ack->seqnum>=base && ack->seqnum<base+w ){
+        if(n!=-1 && ack->seqnum>=base && ack->seqnum<=base+2 ){
             /*Woken up by ack*/
+            counter=(ack->seqnum)+256*mult+1;
+            printf("Counter %d, new counter %d\n",counter,newcounter);
             base=ack->seqnum+1;
-            w=2;
+            if(ack->seqnum==255)
+                mult++;
 
-            seqnum = sendWindow(sockfd, base, w, packetarray, &myserver, mysocklen, times,reminder);
+            w=2;
+            seqnum = sendWindow(sockfd, counter, w, packetarray, &myserver, mysocklen, times,reminder);
 
         }
         if(n==-1){
             /*Woken up by the signal, need to send again*/
+
             w=1;
-            fprintf(stdout,"TIMEOUT|\n");
-            seqnum=sendWindow(sockfd,base,w, packetarray, &myserver, mysocklen,times,reminder);
+
+            seqnum=sendWindow(sockfd,counter,w, packetarray, &myserver, mysocklen,times,reminder);
         }
 
+
     }
-    if(len!=1048576 ) {
-        fprintf(stdout,"SENDING FIN\n");
+    /*We have finished to read the file and we close the connection*/
+    if(len!=DATALEN*N) {
+        fprintf(stdout,"Closing Connection\n");
         sendto(sockfd, fin, sizeof(gbnhdr), 0, &myserver, mysocklen);
     }
 
     return(0);
 }
 
+/**********************************************************************************************************************/
+/* The function keeps receiving packets and checking if they are the expected ones and by the checksum check
+ * if they are correct. For all the correct packets it sends an ack back to the sender. It returns the right
+ * amount of bytes to write on the file.*/
+/**********************************************************************************************************************/
 ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags){
 
     /* TODO: Your code here. */
@@ -194,50 +207,40 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags){
 
     char buf[DATALEN];
     int n=0;
-    int tmp=16;
     int m=0;
+    int zero=0;
+    int tmp=0;
 
     while(1) {
         m = recvfrom(sockfd, &mypacket, sizeof(mypacket), 0, &myclient, &mycsocklen);
-        fprintf(stdout, "this is n: %d,Expected :%d\n", n, expected);
-        fprintf(stdout, "Received packet %u ", mypacket.seqnum);
+        printf("Received packet %d\n",mypacket.seqnum);
 
         uint32_t cs =  gbnhdr_checksum(mypacket,m);
 
-        fprintf(stdout,"INSIDE checksum from the receiver side packet->seq : %u, packet->type : %u, packet->data : %u, checksum =%u function call %u \n",mypacket.seqnum,mypacket.type,mypacket.data,mypacket.checksum,cs);
-
-        /*fprintf(stdout, "%s\n",buffer);*/
         if ((mypacket.seqnum) == expected && (mypacket.checksum == cs)) {
-            fprintf(stdout, "Reading  %u\n", mypacket.data);
             ack->seqnum = expected;
-            n = sendto(sockfd, ack, sizeof(ack), 0, &myclient, mycsocklen);
-            /*for(tmp=0;tmp<DATALEN;tmp++){
-               if(*(packet->data)+tmp=='/0'){
-                  fprintf(stdout,"NULL CHARACTER\n");
-                  break;
-               }
-
-               buf[tmp]=*(packet->data)+tmp;
-               fprintf(stdout,"DEBUG  %u ", buf[tmp]);
-            }*/
-            tmp = expected + 1;
-            if(tmp==1024)
-                tmp=0;
-            memcpy(&expected, &tmp, sizeof(int));
-
+            n = maybe_sendto(sockfd, ack, sizeof(ack), 0, &myclient, mycsocklen);
+            printf("OK:Sending ack %d\n",expected);
+            tmp = expected +1;
+            if(expected==255){
+                memcpy(&expected, &zero, sizeof(int));
+            }
+            else {
+                memcpy(&expected, &tmp, sizeof(int));
+            }
             memcpy(buffer, mypacket.data, sizeof(mypacket.data));
-            fprintf(stdout,"\n M-7  %d\n",m-4);
+            /*Return the amount of data contained in the packet : what has been received minus the type, the seqnum and checksum.*/
             return m-4;
 
         } else {
-            ack->seqnum = expected - 1;
-            n = sendto(sockfd, ack, sizeof(ack), 0, &myclient, mycsocklen);
+            ack->seqnum = expected-1;
+            n = maybe_sendto(sockfd, ack, sizeof(ack), 0, &myclient, mycsocklen);
+            printf("REPEAT:Sending ack %d\n",ack->seqnum);
 
-            fprintf(stdout, "Sending ack %d n:%d\n", ack->seqnum, n);
 
         }
         if ((mypacket.type) == FIN) {
-            fprintf(stdout, "RECEIVED FIN\n");
+            fprintf(stdout, "Closing Connection\n");
             return 0;
         }
 
@@ -245,20 +248,19 @@ ssize_t gbn_recv(int sockfd, void *buffer, size_t len, int flags){
     }
 
 }
-void changeStage(int *stage){
-    *stage = 1;
-}
+/**********************************************************************************************************************/
+/* Close The Socket*/
+/**********************************************************************************************************************/
 int gbn_close(int sockfd){
-
-    /* TODO: Your code here. */
     close(sockfd);
     return(0);
 
 }
-
+/**********************************************************************************************************************/
+/* Open the connection: send a SYN packet and wait for a SYNACK packet*/
+/**********************************************************************************************************************/
 int gbn_connect(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
-    /* TODO: Your code here. */
     /*Setup connection sending a SYN*/
     /*Allocating SYN packet*/
     gbnhdr *synpacket= malloc(sizeof(gbnhdr));
@@ -268,7 +270,6 @@ int gbn_connect(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
     memcpy( &myserver, server, sizeof(struct sockaddr *) );
     memcpy( &mysocklen, &socklen, sizeof(socklen_t) );
-    fprintf(stdout,"Original Server: %ld. My %ld\n\n",server,&myserver);
 
 
     fprintf(stdout,"Sending SYN %u\n",synpacket->type);
@@ -279,7 +280,7 @@ int gbn_connect(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
     /*Waiting to receive the SYNACK*/
     gbnhdr *asynpacket= malloc(sizeof(gbnhdr));
-    fprintf(stdout,"Waiting SYNACK \n");
+    fprintf(stdout,"Waiting  SYNACK \n");
     n=recvfrom(sockfd, asynpacket, sizeof(gbnhdr), 0,server, &socklen);
     if(asynpacket->type!=SYNACK)
         return -1;
@@ -293,7 +294,9 @@ int gbn_listen(int sockfd, int backlog){
 
     return(0);
 }
-
+/**********************************************************************************************************************/
+/* Binds socket to client*/
+/**********************************************************************************************************************/
 int gbn_bind(int sockfd, const struct sockaddr *server, socklen_t socklen){
 
     /* TODO: Your code here. */
@@ -306,7 +309,9 @@ int gbn_bind(int sockfd, const struct sockaddr *server, socklen_t socklen){
     return t;
 
 }
-
+/**********************************************************************************************************************/
+/* Create a Socket*/
+/**********************************************************************************************************************/
 int gbn_socket(int domain, int type, int protocol){
 
     /*----- Randomizing the seed. This is used by the rand() function -----*/
@@ -325,7 +330,9 @@ int gbn_socket(int domain, int type, int protocol){
     }
 
 }
-
+/**********************************************************************************************************************/
+/* Accepts a connection by replying to a SYN packet with a SYNACK packet.*/
+/**********************************************************************************************************************/
 int gbn_accept(int sockfd, struct sockaddr *client, socklen_t socklen){
 
     /* TODO: Your code here. */
@@ -381,5 +388,3 @@ ssize_t maybe_sendto(int  s, const void *buf, size_t len, int flags, \
     else
         return(len);  /* Simulate a success */
 }
-
-
